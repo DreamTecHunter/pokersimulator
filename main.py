@@ -49,7 +49,7 @@ class Poker:
             self.hand = _deck[-amount:]
             if sort:
                 self.hand.sort()
-        return self.deck
+        return self.hand
 
     def __str__(self):
         return "class:Poker"
@@ -203,6 +203,7 @@ def check(rounds: int = 10000000, hand_size: int = 5, symbol_size: int = 13, col
     p = Poker(symbol_count=symbol_size, color_count=color_size)
     p.new_deck()
     stat = csv_stat_format
+    stat['datetime'] = datetime.now()
     _time = time.time()
     for i in range(rounds):
         p.pick_hand(amount=hand_size)
