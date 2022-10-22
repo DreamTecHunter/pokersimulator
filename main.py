@@ -70,10 +70,19 @@ class Poker:
             _hand = self.hand
 
     # TODO: full house
-    # TODO:
+    # TODO: only works for hand size of 5
     def is_full_house(self, _hand: list = None):
         if _hand is None:
             _hand = self.hand
+        temp = [0] * 13
+        for h in _hand:
+            temp[h % self.symbol_count] += 1
+        temp = [t for t in temp if t != 0]
+        if len(temp) != 2:
+            return False
+        if any(t == 2 or t == 3 for t in temp):
+            return True
+        return False
 
     # TODO: four of a kind
     def is_four_of_a_kind(self, _hand: list = None):
@@ -86,18 +95,23 @@ class Poker:
             if 3 == sum([_hand[i] % self.symbol_count == _hand[j] % self.symbol_count
                          for j in range(i + 1, len(_hand))]):
                 return True
-            return False
+        return False
 
     # TODO: straight flush
     # TODO: doesn't work for 7 cards, as long as all cards aren'T directly in a row and in one color
-    # TODO: ass is not included as lowes card
     def is_straight_flush(self, _hand: list = None):
         if _hand is None:
             _hand = self.hand
         # check if all cards are from the same color
         if not all(int(_h / self.symbol_count) == int(_hand[0] / self.symbol_count) for _h in _hand):
             return False
-
+        # check if there are multiple ass
+        ass_amount = sum(h % self.symbol_count == self.symbol_count - 1 for h in _hand)
+        if 1 < ass_amount:
+            return False
+        if ass_amount == 1:
+            if all(_hand[i] % self.symbol_count == i for i in range(0, len(_hand) - 1)):
+                return True
         # check if all cards are directly in a row
         if not all(_hand[i] % self.symbol_count + 1 == _hand[i + 1] % self.symbol_count for i in range(len(_hand) - 1)):
             return False
@@ -146,11 +160,12 @@ def check_is_royal_flush():
     print("avg:" + f"{average * 100:.6f}" + "%")
 
 
-def check(rounds: int = 10000000, hand_size: int = 5, symbole_size: int = 13, color_size: int = 4):
+def check(rounds: int = 10000000, hand_size: int = 5, symbol_size: int = 13, color_size: int = 4):
     print("Poker simulation")
-    p = Poker(symbol_count=symbole_size, color_count=color_size)
+    p = Poker(symbol_count=symbol_size, color_count=color_size)
     p.new_deck()
     counter = {
+        "full_house": 0,
         "four_of_a_kind": 0,
         "straight_flush": 0,
         "royal_flush": 0
@@ -158,6 +173,10 @@ def check(rounds: int = 10000000, hand_size: int = 5, symbole_size: int = 13, co
     _time = time.time()
     for i in range(rounds):
         p.pick_hand(amount=hand_size)
+        if p.is_full_house():
+            counter["full_house"] += 1
+            print("full house")
+            continue
         if p.is_royal_flush():
             counter["royal_flush"] += 1
             # print("royal flush")
