@@ -58,16 +58,33 @@ class Poker:
     def is_three_of_a_kind(self, _hand: list = None):
         if _hand is None:
             _hand = self.hand
+            # loop rounds -2, because checking 2 cards are never going to be four_of_a_kind.
+            for i in range(len(_hand) - 2):
+                # checking if one card is the same as other cards and
+                # if there are 3 same cards (2 True values in list) it will return True
+                if 2 == sum([_hand[i] % self.symbol_count == _hand[j] % self.symbol_count
+                             for j in range(i + 1, len(_hand))]):
+                    return True
+            return False
 
     # TODO: straight
     def is_straight(self, _hand: list = None):
         if _hand is None:
             _hand = self.hand
+        _hand = sorted(h % self.symbol_count for h in _hand)
+        ass_amount = sum(h == self.symbol_count - 1 for h in _hand)
+        if 1 < ass_amount:
+            return False
+        if ass_amount == 1:
+            if all(_hand[i] == i for i in range(0, len(_hand) - 1)):
+                return True
+        return all(_hand[i] + 1 == _hand[i + 1] for i in range(len(_hand) - 1))
 
     # TODO: flush
     def is_flush(self, _hand: list = None):
         if _hand is None:
             _hand = self.hand
+        return all(int(_h / self.symbol_count) == int(_hand[0] / self.symbol_count) for _h in _hand)
 
     # TODO: full house
     # TODO: only works for hand size of 5
@@ -80,9 +97,7 @@ class Poker:
         temp = [t for t in temp if t != 0]
         if len(temp) != 2:
             return False
-        if any(t == 2 or t == 3 for t in temp):
-            return True
-        return False
+        return any(t == 2 or t == 3 for t in temp)
 
     # TODO: four of a kind
     def is_four_of_a_kind(self, _hand: list = None):
@@ -113,9 +128,7 @@ class Poker:
             if all(_hand[i] % self.symbol_count == i for i in range(0, len(_hand) - 1)):
                 return True
         # check if all cards are directly in a row
-        if not all(_hand[i] % self.symbol_count + 1 == _hand[i + 1] % self.symbol_count for i in range(len(_hand) - 1)):
-            return False
-        return True
+        return all(_hand[i] % self.symbol_count + 1 == _hand[i + 1] % self.symbol_count for i in range(len(_hand) - 1))
 
     # TODO: royal flush
     # TODO: doesn't work for 7 cards, as long as all cards aren'T directly in a row, in one color
@@ -130,9 +143,7 @@ class Poker:
         if _hand[-1] % self.symbol_count is not self.symbol_count - 1:
             return False
         # check if all cards are directly in a row
-        if not all(_hand[i] % self.symbol_count + 1 == _hand[i + 1] % self.symbol_count for i in range(len(_hand) - 1)):
-            return False
-        return True
+        return all(_hand[i] % self.symbol_count + 1 == _hand[i + 1] % self.symbol_count for i in range(len(_hand) - 1))
 
 
 def check_basics():
@@ -165,6 +176,9 @@ def check(rounds: int = 10000000, hand_size: int = 5, symbol_size: int = 13, col
     p = Poker(symbol_count=symbol_size, color_count=color_size)
     p.new_deck()
     counter = {
+        "three_of_a_kind": 0,
+        "straight": 0,
+        "flush": 0,
         "full_house": 0,
         "four_of_a_kind": 0,
         "straight_flush": 0,
@@ -173,10 +187,6 @@ def check(rounds: int = 10000000, hand_size: int = 5, symbol_size: int = 13, col
     _time = time.time()
     for i in range(rounds):
         p.pick_hand(amount=hand_size)
-        if p.is_full_house():
-            counter["full_house"] += 1
-            print("full house")
-            continue
         if p.is_royal_flush():
             counter["royal_flush"] += 1
             # print("royal flush")
@@ -188,6 +198,22 @@ def check(rounds: int = 10000000, hand_size: int = 5, symbol_size: int = 13, col
         if p.is_four_of_a_kind():
             counter["four_of_a_kind"] += 1
             # print("four_of_a_kind")
+            continue
+        if p.is_full_house():
+            counter["full_house"] += 1
+            # print("full house")
+            continue
+        if p.is_flush():
+            counter["flush"] += 1
+            # print("flush")
+            continue
+        if p.is_straight():
+            counter["straight"] += 1
+            # print("straight")
+            continue
+        if p.is_three_of_a_kind():
+            counter["three_of_a_kind"] += 1
+            # print("three of a kind")
             continue
     _time = time.time() - _time
     print("rounds:\t" + str(rounds) + "\ttimes")
