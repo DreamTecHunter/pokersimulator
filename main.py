@@ -1,5 +1,24 @@
+import csv
+from datetime import datetime
 import random
 import time
+
+csv_stat_format = {
+    'id': -1,
+    'datetime': str(datetime.now()),
+    'rounds': 0,
+    'procedure_time': 0,
+    'high_card': 0,
+    'one_pair': 0,
+    'two_pair': 0,
+    'three_of_a_kind': 0,
+    'straight': 0,
+    'flush': 0,
+    'full_house': 0,
+    'four_of_a_kind': 0,
+    'straight_flush': 0,
+    'royal_flush': 0
+}
 
 
 # TODO: https://de.wikipedia.org/wiki/Poker
@@ -38,21 +57,29 @@ class Poker:
     # check-functions
 
     # TODO: highest card (not really ^^)
+    def is_high_card(self):
+        return True
 
     # TODO: one pair
     def is_one_pair(self, _hand: list = None):
         if _hand is None:
             _hand = self.hand
-        for i in range(len(_hand)):
-            # might have more pairs, but the condition-order should prevent miscalculations
-            if 1 == sum([_hand[i] % self.symbol_count == _hand[j] for j in range(i + 1, len(_hand))]):
-                return True
-        return False
+        temp = [0] * 13
+        for h in _hand:
+            temp[h % self.symbol_count] += 1
+        return 4 == len([t for t in temp if t != 0])
 
     # TODO: two pair
     def is_two_pair(self, _hand: list = None):
         if _hand is None:
             _hand = self.hand
+        temp = [0] * 13
+        for h in _hand:
+            temp[h % self.symbol_count] += 1
+        temp = [t for t in temp if t != 0]
+        if len(temp) != 3:
+            return False
+        return 2 == sum(t == 2 for t in temp)
 
     # TODO: three of a kind
     def is_three_of_a_kind(self, _hand: list = None):
@@ -97,7 +124,7 @@ class Poker:
         temp = [t for t in temp if t != 0]
         if len(temp) != 2:
             return False
-        return any(t == 2 or t == 3 for t in temp)
+        return any(temp[i] == 2 and temp[(i + 1) % len(temp)] == 3 for i in range(len(temp)))
 
     # TODO: four of a kind
     def is_four_of_a_kind(self, _hand: list = None):
@@ -175,56 +202,77 @@ def check(rounds: int = 10000000, hand_size: int = 5, symbol_size: int = 13, col
     print("Poker simulation")
     p = Poker(symbol_count=symbol_size, color_count=color_size)
     p.new_deck()
-    counter = {
-        "three_of_a_kind": 0,
-        "straight": 0,
-        "flush": 0,
-        "full_house": 0,
-        "four_of_a_kind": 0,
-        "straight_flush": 0,
-        "royal_flush": 0
-    }
+    stat = csv_stat_format
     _time = time.time()
     for i in range(rounds):
         p.pick_hand(amount=hand_size)
         if p.is_royal_flush():
-            counter["royal_flush"] += 1
-            # print("royal flush")
+            stat['royal_flush'] += 1
+            # print('royal flush')
             continue
         if p.is_straight_flush():
-            counter["straight_flush"] += 1
-            # print("straight flush")
+            stat['straight_flush'] += 1
+            # print('straight flush')
             continue
         if p.is_four_of_a_kind():
-            counter["four_of_a_kind"] += 1
-            # print("four_of_a_kind")
+            stat['four_of_a_kind'] += 1
+            # print('four_of_a_kind')
             continue
         if p.is_full_house():
-            counter["full_house"] += 1
-            # print("full house")
+            stat['full_house'] += 1
+            # print('full house')
             continue
         if p.is_flush():
-            counter["flush"] += 1
-            # print("flush")
+            stat['flush'] += 1
+            # print('flush')
             continue
         if p.is_straight():
-            counter["straight"] += 1
-            # print("straight")
+            stat['straight'] += 1
+            # print('straight')
             continue
         if p.is_three_of_a_kind():
-            counter["three_of_a_kind"] += 1
-            # print("three of a kind")
+            stat['three_of_a_kind'] += 1
+            # print('three of a kind')
+            continue
+        if p.is_two_pair():
+            stat['two_pair'] += 1
+            continue
+        if p.is_one_pair():
+            stat['one_pair'] += 1
+            continue
+        if p.is_high_card():
+            stat['high_card'] += 1
             continue
     _time = time.time() - _time
+    stat['procedure_time'] = _time
+    stat['rounds'] = rounds
     print("rounds:\t" + str(rounds) + "\ttimes")
     print("time:\t" + str(_time) + "\tseconds")
-    print(counter)
-    for counter_key in counter:
-        print(counter_key + ":\t" + f"{(counter[counter_key] / rounds * 100):.6f}%")
-    _count = 0
-    for counter_key in counter:
-        _count += counter[counter_key] / rounds * 100
-    print("sum:\t" + str(_count) + "%")
+    print(stat)
+    for i in range(3, len(stat.keys())):
+        keys = [key for key in stat.keys()]
+        print(str(keys[i]) + ":\t" + f"{(stat[keys[i]] / rounds * 100):.6f}%")
+    save_stats(stat)
+
+
+def save_stats(stat: dict):
+    content = {}
+    with open("stats.csv") as csv_f:
+        reader = csv.reader(csv_f, delimiter=';')
+        for line in reader:
+            content[line[0]] = line[1:]
+    print(content)
+    with open("stats.csv", 'w', newline='') as csv_f:
+        writer = csv.writer(csv_f, delimiter=";")
+        last_id = -1
+        for c_key in content:
+            writer.writerow([c_key] + content[c_key])
+            if c_key != 'id':
+                last_id = int(c_key)
+        new_stat = [stat[s] for s in stat]
+        new_stat[0] = last_id + 1
+        print(new_stat)
+        writer.writerow(new_stat)
 
 
 if __name__ == '__main__':
