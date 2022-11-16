@@ -1,4 +1,5 @@
 import csv
+import string
 from datetime import datetime
 import random
 import time
@@ -184,7 +185,7 @@ class Poker:
         _hand = self.check_hand(_hand)
         _hand = sorted(h % self.symbol_count for h in _hand)
         if with_ace_as_lowest:
-            ace_amount = sum(h == self.symbol_count for h in _hand)
+            ace_amount = sum(h == self.symbol_count - 1 for h in _hand)
             if 1 < ace_amount:
                 return False
             if ace_amount == 1:
@@ -262,6 +263,11 @@ class Poker:
             print("procedure-time:\t" + str(_time))
         stat['procedure_time'] = _time
         stat['rounds'] = rounds
+        print("\n")
+        if message_on:
+            for key in list(csv_stat_format.keys())[4:]:
+                value = round(stat[key] / stat["rounds"] * 100 * 10 ** 7) / 10 ** 7
+                print(str(key) + ":\t" + str(value) + "%")
         return stat
 
 
